@@ -1,0 +1,5 @@
+name,vendor,category,users,cost_per_year,last_used,owner_role,holds_data,notes
+"Microsoft 365 (SharePoint, OneDrive)",Microsoft,office_suite,20,[test],2026-11-05,it_ops_lead,"email, documents",TEST DATA - from licence export
+Pipedrive,Pipedrive,crm,5,[test],2026-11-05,it_ops_lead,company records,TEST DATA - from licence export
+Clockify,Clockify,timesheets,1112,[test],2026-11-06,it_ops_lead,student hours,TEST DATA - from licence export
+Canva,Canva,design,4,[test],2026-10-28,it_ops_lead,job post graphics,TEST DATA - not mentioned in any interview

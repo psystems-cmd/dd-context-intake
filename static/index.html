@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DD Context Intake</title>
+<link rel="icon" href="/assets/icon.svg">
+<style>
+  /* same look as the DD Classifier (dd-registry-classifier/static/index.html) so both feel like one product */
+  :root { --ink:#1f2328; --muted:#6b7280; --line:#e5e7eb; --bg:#f6f7f9; --acc:#4f46e5; --accbg:#eef2ff;
+          --ok:#15803d; --okbg:#f0fdf4; --warn:#b45309; --warnbg:#fffbeb; --err:#b91c1c; --errbg:#fef2f2; }
+  * { box-sizing: border-box; }
+  body { font: 14px/1.5 system-ui, -apple-system, sans-serif; margin: 0; color: var(--ink); background: var(--bg); }
+  .top { position: sticky; top: 0; z-index: 20; }
+  header { height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #111827; color: #fff; }
+  header img { width: 26px; height: 26px; } header .title { font-weight: 600; } header .tagline { color: #9ca3af; font-size: 13px; }
+  header .right { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  header .chip { background: #1f2937; border: 1px solid #374151; border-radius: 999px; padding: 3px 10px; }
+  header .chip.test { background: #78350f; border-color: #b45309; color: #fde68a; }
+  header a { color: #c7d2fe; }
+  nav { display: flex; gap: 4px; padding: 0 20px; background: #fff; border-bottom: 1px solid var(--line); }
+  nav a { padding: 10px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; font-weight: 500; cursor: pointer; }
+  nav a.on { color: var(--acc); border-bottom-color: var(--acc); } nav a .n { background: var(--acc); color: #fff; border-radius: 999px; font-size: 11px; padding: 0 6px; margin-left: 4px; }
+  .pipe { display: flex; align-items: center; gap: 6px; padding: 8px 20px; background: #fff; border-bottom: 1px solid var(--line); font-size: 12px; flex-wrap: wrap; }
+  .pipe .l { color: var(--muted); margin-right: 4px; font-weight: 600; }
+  .step { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; background: #f9fafb; }
+  .step b { font-weight: 600; } .step .tag { font-size: 10.5px; border-radius: 4px; padding: 0 5px; margin-left: 5px; }
+  .tag.live { background: #dcfce7; color: #166534; } .tag.stub { background: #fef3c7; color: #92400e; } .tag.ext { background: #e0e7ff; color: #3730a3; }
+  .arrow { color: #9ca3af; }
+  main { padding: 20px 24px 60px; max-width: 1280px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 16px; margin: 0 0 2px; } .card h3 { font-size: 14px; margin: 0 0 8px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .kpi .l { font-size: 12px; color: var(--muted); } .kpi .v { font-size: 20px; font-weight: 600; margin-top: 2px; } .kpi .v small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  table.t { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .t th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .t td { padding: 6px 8px; border-bottom: 1px solid #f1f2f4; vertical-align: middle; }
+  .t input[type=text] { width: 100%; min-width: 80px; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; background: #f3f4f6; color: #374151; }
+  .pill.done { background: #dcfce7; color: #166534; } .pill.started { background: #dbeafe; color: #1e40af; } .pill.invited { background: #fef3c7; color: #92400e; }
+  .pill.deep { background: var(--accbg); color: #3730a3; } .pill.warn { background: #fee2e2; color: #991b1b; } .pill.test { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--muted); }
+  .muted { color: var(--muted); }
+  .btn { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; color: var(--ink); }
+  .btn:hover { background: #f9fafb; } .btn.primary { background: var(--acc); border-color: var(--acc); color: #fff; } .btn.small { padding: 2px 8px; font-size: 12px; }
+  .btn.danger { color: var(--err); }
+  input[type=text], select, textarea { font: inherit; font-size: 13px; border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 8px; background: #fff; }
+  textarea { width: 100%; min-height: 90px; resize: vertical; }
+  .msg { margin-top: 8px; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+  .msg.ok { color: var(--ok); background: var(--okbg); } .msg.err { color: var(--err); background: var(--errbg); }
+  .banner { padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; }
+  .banner.warn { background: var(--warnbg); color: var(--warn); border: 1px solid #fde68a; } .banner.info { background: var(--accbg); color: #3730a3; border: 1px solid #c7d2fe; }
+  .mods { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .mod { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .mod .h { display: flex; align-items: baseline; gap: 8px; } .mod .h b { font-size: 15px; } .mod .h .c { margin-left: auto; font-weight: 600; }
+  .bar { height: 6px; background: #f3f4f6; border-radius: 3px; margin: 6px 0 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--acc); } .bar i.low { background: #f59e0b; }
+  .mod .row { font-size: 12.5px; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+  .tension { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px; background: #fff; }
+  .tension .th { padding: 8px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
+  .side { display: grid; grid-template-columns: 1fr 1fr; }
+  .claim { padding: 10px 14px; font-size: 13px; } .claim + .claim { border-left: 1px solid var(--line); }
+  .claim.win { background: var(--okbg); } .claim .who { font-weight: 600; } .claim q { color: var(--muted); font-style: italic; display: block; margin-top: 4px; }
+  .tension .tf { padding: 8px 14px; border-top: 1px solid var(--line); font-size: 13px; background: #fafafa; border-radius: 0 0 10px 10px; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; font-size: 11.5px; overflow: auto; max-height: 340px; white-space: pre; }
+  .iv { display: grid; grid-template-columns: 240px 1fr; gap: 16px; }
+  .sidebar .m { display: flex; justify-content: space-between; padding: 6px 8px; border-radius: 6px; font-size: 13px; }
+  .sidebar .m.cur { background: var(--accbg); font-weight: 600; } .sidebar .m .x { color: var(--muted); font-size: 12px; }
+  .q { font-size: 16px; font-weight: 500; margin: 6px 0 12px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="top">
+  <header>
+    <img src="/assets/icon.svg" alt="">
+    <span class="title">DD Context Intake</span>
+    <span class="tagline">Several people at the target, one weighted picture, before Day 0</span>
+    <span class="right"><span class="chip test">TEST DATA</span><span class="chip" id="targetChip">no target</span>
+      <a id="clsLink" href="http://localhost:8000" target="_blank">DD Classifier ↗</a></span>
+  </header>
+  <div class="pipe" id="pipe"></div>
+  <nav id="nav"></nav>
+</div>
+<main id="main"></main>
+
+<script>
+const $ = s => document.querySelector(s), esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const api = async (path, body, headers) => {
+  const r = await fetch(path, body === undefined ? {} : {method: "POST", body: typeof body === "string" || body instanceof ArrayBuffer ? body : JSON.stringify(body), headers});
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j;
+};
+const PIPE = [["Setup", "live"], ["Interviews", "stub", "scripted"], ["Extraction", "stub", "precomputed claims"],
+              ["Merge", "live"], ["Export", "live"], ["DD Classifier", "ext", "registry + docking plan"]];
+const TABS = [["setup", "Setup"], ["interview", "Interview"], ["merged", "Merged picture"], ["export", "Export"]];
+let S = null, M = null, tab = location.hash.slice(1) || "setup", flash = {};
+const inviteMode = location.pathname.startsWith("/i/");
+
+function pipe(active) {
+  $("#pipe").innerHTML = '<span class="l">Where this goes</span>' + PIPE.map(([n, k, h], i) =>
+    `<span class="step" style="${active === i ? "border-color:var(--acc)" : ""}"><b>${n}</b><span class="tag ${k}">${k === "ext" ? "next app" : k === "live" ? "live" : "stubbed"}</span>${h ? ` <span class="muted">${h}</span>` : ""}</span>`
+  ).join('<span class="arrow">→</span>');
+}
+function nav() {
+  $("#nav").innerHTML = TABS.map(([id, label]) => `<a class="${tab === id ? "on" : ""}" onclick="go('${id}')">${label}${id === "merged" && M && M.tensions.length ? `<span class="n">${M.tensions.length}</span>` : ""}</a>`).join("");
+}
+async function go(t) { tab = t; location.hash = t; await refresh(); }
+async function refresh() {
+  [S, M] = await Promise.all([api("/api/state"), api("/api/merged")]);
+  $("#targetChip").textContent = S.target || "no target"; $("#clsLink").href = S.classifier_url;
+  nav(); pipe({setup: 0, interview: 1, merged: 3, export: 4}[tab]);
+  $("#main").innerHTML = {setup, interview: interviewsTab, merged, export: exportTab}[tab]();
+}
+const say = (k, ok, text) => { flash[k] = `<div class="msg ${ok ? "ok" : "err"}">${text}</div>`; };
+async function act(fn, k) { try { await fn(); } catch (e) { say(k || "setup", false, esc(e.message)); } await refresh(); }
+const link = b => b.token ? `/i/${S.slug}/${b.token}` : "";
+
+/* ---------- Setup ---------- */
+function setup() {
+  const roles = Object.entries(S.roles), nr = M.next_role;
+  return `${S.demo ? '<div class="banner warn">Demo data loaded: fictional target, fictional people, all answers are test data. "Reset" clears it.</div>' : ""}
+  <div class="card"><h2>1 · Target</h2><p class="sub">Name the target and optionally upload a tool or licence export (.csv with the classifier's column names). Uploaded rows count as <b>data</b> (weight 1.0) and outrank interview estimates.</p>
+    <div class="toolbar"><input type="text" id="tname" value="${esc(S.target)}" placeholder="e.g. Campus Crew GmbH" style="width:300px">
+      <button class="btn" onclick="act(()=>api('/api/target',{name:$('#tname').value}))">Save</button>
+      <label class="btn">Upload tool / licence export (.csv)<input type="file" accept=".csv" hidden onchange="up(this.files[0])"></label>
+      <span class="muted">${S.uploads.map(u => `${esc(u.file)} · ${u.rows} rows (${u.source_id})`).join(", ") || "no upload"}</span></div>${flash.target || ""}</div>
+  <div class="card"><h2>2 · Knowledge bearers</h2><p class="sub">Who at the target contributes. Several people can share a role; each counts with that role's weight. <b>Names stay in this list</b>: claims and exports carry only the ID and role.</p>
+    <table class="t"><tr><th>ID</th><th>First name</th><th>Last name</th><th>Email (dummy)</th><th>Role</th><th>Note</th><th>Interview link</th><th>Status</th><th></th></tr>
+    ${S.bearers.map(b => `<tr data-id="${b.id}"><td class="mono">${b.id}</td>
+      <td><input type="text" name="first" value="${esc(b.first)}"></td><td><input type="text" name="last" value="${esc(b.last)}"></td>
+      <td><input type="text" name="email" value="${esc(b.email)}"></td>
+      <td><select name="role">${roles.map(([r, l]) => `<option value="${r}" ${r === b.role ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></td>
+      <td><input type="text" name="note" value="${esc(b.note)}"></td>
+      <td>${b.token ? `<a class="mono" href="${link(b)}" target="_blank">${link(b)}</a>` : '<span class="muted">—</span>'}</td>
+      <td><span class="pill ${b.status}">${b.status}</span> <span class="muted">${S.answered[b.id] || 0} claims</span></td>
+      <td style="white-space:nowrap"><button class="btn small" onclick="saveRow('${b.id}')">Save</button> <button class="btn small danger" onclick="delRow('${b.id}')">Remove</button></td></tr>`).join("")}
+    </table>
+    <div class="toolbar" style="margin-top:12px"><button class="btn" onclick="act(()=>api('/api/bearers',{role:'field_lead'}))">+ Add person</button>
+      <button class="btn primary" onclick="act(()=>api('/api/invite',{}))">Send invites</button>
+      <span class="muted">Generates one personal link per person. No emails are sent in this demo.</span>
+      <span style="margin-left:auto"></span>
+      <button class="btn" onclick="act(()=>api('/api/demo',{}).then(()=>{tab='merged';location.hash='merged'}))">Pre-fill with demo data</button>
+      <button class="btn danger" onclick="confirm('Clear target, people and all claims?') && act(()=>api('/api/reset',{}))">Reset</button></div>${flash.setup || ""}</div>
+  <div class="card"><h2>3 · Coverage: whom to add next</h2>
+    <p class="sub">Thinnest modules by confidence: ${nr.modules.map(m => `<b>${m}</b> (${M.modules[m].confidence.toFixed(2)})`).join(", ")}.</p>
+    <div class="banner info" style="margin:0">Next best role: <b>${esc(nr.label)}</b>, highest weight in ${nr.modules.join(" + ")}${nr.new ? "" : " (role already heard: add a second person)"}.</div></div>`;
+}
+async function up(f) { if (!f) return; await act(async () => { const r = await api("/api/upload", await f.arrayBuffer(), {"X-Filename": encodeURIComponent(f.name)}); say("target", true, `${r.rows} rows imported as data claims (${r.source_id}).`); }, "target"); }
+function saveRow(id) {
+  const tr = document.querySelector(`tr[data-id="${id}"]`), b = {id};
+  tr.querySelectorAll("input,select").forEach(i => b[i.name] = i.value);
+  act(() => api("/api/bearers", b));
+}
+function delRow(id) { if (confirm(`Remove ${id} and their claims?`)) act(() => api(`/api/bearers/${id}/delete`, {})); }
+
+/* ---------- Interviews (deal lead view) ---------- */
+function interviewsTab() {
+  const rows = S.bearers.filter(b => b.token);
+  return `<div class="card"><h2>Interviews</h2><p class="sub">Each person opens their personal link; the role is preset, so the role step is skipped. A new interview only <b>adds</b> claims, it never resets another role.</p>
+    ${rows.length ? `<table class="t"><tr><th>ID</th><th>Role</th><th>Link</th><th>Status</th><th>Claims</th></tr>${rows.map(b => `<tr><td class="mono">${b.id}</td><td>${esc(S.roles[b.role])}</td>
+      <td><a href="${link(b)}" target="_blank">Open interview ↗</a> <span class="mono">${link(b)}</span></td><td><span class="pill ${b.status}">${b.status}</span></td><td>${S.answered[b.id] || 0}</td></tr>`).join("")}</table>`
+      : '<p class="muted">No links yet. Go to Setup and click "Send invites" (or "Pre-fill with demo data").</p>'}</div>`;
+}
+
+/* ---------- Merged picture ---------- */
+function merged() {
+  const mods = Object.values(M.modules), sys = M.modules.SYS;
+  if (!M.claims) return '<div class="card"><p class="muted">No claims yet. Run an interview or use "Pre-fill with demo data" in Setup.</p></div>';
+  return `<div class="kpis">
+    <div class="kpi"><div class="l">Contributors</div><div class="v">${M.contributors.length} <small>${M.contributors.join(", ")}</small></div></div>
+    <div class="kpi"><div class="l">Claims</div><div class="v">${M.claims} <small>test data</small></div></div>
+    <div class="kpi"><div class="l">Open tensions</div><div class="v">${M.tensions.length}</div></div>
+    <div class="kpi"><div class="l">SYS decision rule</div><div class="v">${sys.confidence >= 0.5 ? "docking plan OK" : "refused"} <small>SYS ${sys.confidence.toFixed(2)} vs 0.50</small></div></div>
+    <div class="kpi"><div class="l">Next interview</div><div class="v" style="font-size:15px">${esc(M.next_role.label)}</div></div></div>
+  <div class="card"><h2>Modules</h2><p class="sub">Confidence = 0.35 essential coverage (by content) + 0.25 source diversity + 0.20 data grounding + 0.10 consistency + 0.10 recency. Weights from <span class="mono">dd/weights.yaml</span>.</p>
+  <div class="mods">${mods.map(m => `<div class="mod"><div class="h"><b>${m.id}</b><span class="muted">${esc(m.name)}</span><span class="c">${m.confidence.toFixed(2)}</span></div>
+    <div class="bar"><i class="${m.confidence < 0.6 ? "low" : ""}" style="width:${m.confidence * 100}%"></i></div>
+    <div class="row">Essential coverage <b>${m.essential_coverage[0]}/${m.essential_coverage[1]}</b>
+      ${m.tensions ? `<span class="pill warn">${m.tensions} tension</span>` : ""}${m.needs_verification.length ? `<span class="pill">${m.needs_verification.length} to verify</span>` : ""}</div>
+    <div class="row">${m.sources.map(s => `<span class="pill ${s.weight >= 0.7 ? "deep" : ""}">${esc(s.label)} ${s.weight}</span>`).join("") || '<span class="muted">no sources</span>'}</div>
+    ${m.missing.length ? `<div class="row muted">missing: ${m.missing.join(", ")}</div>` : ""}</div>`).join("")}</div></div>
+  <div class="card"><h2>Tensions (${M.tensions.length})</h2><p class="sub">Contradictions are kept, not averaged. The higher-ranked claim (data first, then role weight, then recency) is the working value until verified.</p>
+  ${M.tensions.map(t => `<div class="tension"><div class="th">${t.module} · ${t.section}</div><div class="side">
+    ${[t.winner, t.other].map((c, i) => `<div class="claim ${i ? "" : "win"}"><span class="who">${esc(c.role_label)}</span> <span class="mono">${c.bearer_id} · weight ${c.weight} · ${c.kind}</span> ${i ? "" : '<span class="pill done">suggested winner</span>'}
+      <div>${esc(c.value)}</div><q>“${esc(c.quote)}”</q></div>`).join("")}</div>
+    <div class="tf"><b>How to verify:</b> ${esc(t.verify)}</div></div>`).join("") || '<p class="muted">No tensions.</p>'}</div>`;
+}
+
+/* ---------- Export ---------- */
+let EX = null;
+function exportTab() {
+  return `<div class="card"><h2>Export</h2><p class="sub">Writes three files to <span class="mono">out/${esc(S.slug)}/</span>. <span class="mono">target_inventory.csv</span> is the contract with the DD Classifier (its column names + notes, confidence, sources). No names, only roles and bearer IDs.</p>
+    <div class="toolbar"><button class="btn primary" onclick="doExport()">Export 3 files</button>
+      <button class="btn" onclick="doSend()">Send to DD Classifier</button>
+      <a href="${S.classifier_url}" target="_blank">Open DD Classifier ↗</a></div>${flash.send || ""}</div>
+  ${EX ? Object.entries(EX.files).map(([n, t]) => `<div class="card"><div class="toolbar"><h3 style="margin:0">${n}</h3><span class="pill test">test data</span>
+    <a style="margin-left:auto" href="/api/download/${n}">Download</a></div><pre>${esc(t)}</pre></div>`).join("") : ""}`;
+}
+async function doExport() { await act(async () => { EX = await api("/api/export", {}); say("send", true, `Written to ${EX.dir}/`); }, "send"); }
+async function doSend() {
+  await act(async () => {
+    const r = await api("/api/send", {});
+    if (!r.ok) return say("send", false, esc(r.error));
+    say("send", true, `DD Classifier accepted ${r.rows} rows (uploaded as ${r.as}). <a href="${r.open}" target="_blank">Open the classifier ↗</a>, log in as Platform Lead and run DD for the docking plan.` +
+      (r.warnings.length ? `<div class="muted">${r.warnings.map(esc).join("<br>")}</div>` : ""));
+  }, "send");
+}
+
+/* ---------- Interview (personal link) ---------- */
+let IV = null, skipped = new Set(), TOKEN = location.pathname.split("/")[3];
+async function loadIv() { IV = await api(`/api/interview/${TOKEN}`); renderIv(); }
+function renderIv() {
+  const done = new Set(IV.answered.map(a => a.module + "." + a.section)), qs = IV.questions;
+  const open = qs.filter(q => !done.has(q.module + "." + q.section) && !skipped.has(q.module + "." + q.section)), q = open[0];
+  const deep = qs.filter(q => q.depth === "deep").map(q => q.module), deepOk = [...new Set(deep)].every(m => IV.coverage[m].covered.length === IV.coverage[m].total);
+  $("#targetChip").textContent = IV.target;
+  $("#main").innerHTML = `<div class="banner warn"><b>Before closing, please don't share student names, client names or prices.</b> Structure, volumes, ranges and system names are fine.</div>
+  <div class="banner info">Demo: questions are scripted from <span class="mono">dd-modules.json</span> + your role's weights (deep modules first). Your answer is stored as one raw claim (estimate, text).
+    In production the extraction prompt (<span class="mono">dd/prompts/extraction.md</span>, cheap Lyceum model) turns the transcript into normalised claims with steps, systems and numbers.</div>
+  <div class="iv"><div class="card sidebar"><h3>DD modules</h3><p class="sub">Coverage by content, your answers only</p>
+    ${IV.modules.map(m => { const w = IV.weights[m.id], c = IV.coverage[m.id]; return `<div class="m ${q && q.module === m.id ? "cur" : ""}"><span>${m.id} <span class="x">${w >= 0.7 ? "deep" : w >= 0.4 ? "light" : "—"}</span></span><span class="x">${c.covered.length}/${c.total}</span></div>`; }).join("")}</div>
+  <div><div class="card"><div class="toolbar"><h2 style="margin:0">Interview · ${esc(IV.bearer.label)}</h2><span class="mono">${IV.bearer.id}</span><span class="pill ${IV.status}">${IV.status}</span><span class="pill test">test</span></div>
+    <p class="sub">So your systems and processes keep running from Day 1. About systems, data and processes, never about how well anyone performs. One question at a time; skip what you don't know.</p>
+    ${IV.status === "done" ? '<div class="msg ok">Thank you, your interview is marked done. You can still add answers; they only add to the picture.</div>' : ""}
+    ${q ? `<div class="muted">Question ${qs.length - open.length + 1} of ${qs.length} · <b>${q.module}</b> · ${q.section.replace(/_/g, " ")} · <span class="pill ${q.depth === "deep" ? "deep" : ""}">${q.depth}</span></div>
+      <div class="q">${esc(q.text)}</div>${q.requires.length ? `<p class="sub">Covers the section once it has: ${q.requires.join(", ").replace(/_/g, " ")} (filled by the extraction step in production).</p>` : ""}
+      <textarea id="ans" placeholder="Your answer"></textarea>
+      <div class="toolbar" style="margin-top:8px"><button class="btn primary" onclick="send(false)">Save answer</button>
+        <button class="btn" onclick="send(true)">Doesn't apply</button><button class="btn" onclick="skipped.add('${q.module}.${q.section}');renderIv()">Skip</button>
+        <span style="margin-left:auto" class="muted">${deepOk ? "Deep modules covered: you can finish." : "Ends when your deep modules are covered."}</span>
+        <button class="btn" onclick="finish()">Finish</button></div>${flash.iv || ""}`
+      : `<p>All questions answered or skipped. <button class="btn primary" onclick="finish()">Finish interview</button> <button class="btn" onclick="skipped.clear();renderIv()">Back to skipped</button></p>`}</div>
+    <div class="card"><h3>Your answers (${IV.answered.length})</h3>${IV.answered.map(a => `<div style="font-size:13px;margin-bottom:4px"><b>${a.module} · ${a.section}</b>: ${esc(a.value)}</div>`).join("") || '<p class="muted">none yet</p>'}</div></div></div>`;
+}
+async function send(na) {
+  const q = IV.questions.find(q => !IV.answered.some(a => a.module === q.module && a.section === q.section) && !skipped.has(q.module + "." + q.section));
+  try { IV = await api(`/api/interview/${TOKEN}`, {module: q.module, section: q.section, answer: na ? "" : $("#ans").value, not_applicable: na}); flash.iv = ""; }
+  catch (e) { flash.iv = `<div class="msg err">${esc(e.message)}</div>`; }
+  renderIv();
+}
+async function finish() { IV = await api(`/api/interview/${TOKEN}/done`, {}); renderIv(); }
+
+if (inviteMode) { pipe(1); loadIv().catch(e => $("#main").innerHTML = `<div class="card"><div class="msg err">${esc(e.message)}: this link is not valid (anymore).</div></div>`); }
+else refresh();
+</script>
+</body>
+</html>
